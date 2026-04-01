@@ -7,6 +7,7 @@ import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/V
 
 // Custom error
 error Raffle_NotEnoughEthSent();
+error Raffle_TransferFailed();
 
 /**
  * @title A sample Raffle Contract
@@ -21,6 +22,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     bool private constant ENABLE_NATIVE_PAYMENT = true;
     uint256 private immutable i_entranceFee;
     uint256 private immutable i_interval;
+    address private s_recentWinner;
     address payable[] private s_players;
     uint256 private s_lastTimeStamp;
     uint256 private immutable i_subscriptionId;
@@ -75,7 +77,13 @@ contract Raffle is VRFConsumerBaseV2Plus {
     function fulfillRandomWords(
         uint256 requestId,
         uint256[] memory randomWords
-    ) internal override {}
+    ) internal override {
+        uint256 indexOfWinner = randomWords[0] % s_players.length;
+        address payable winner = s_players[indexOfWinner];
+        s_recentWinner = winner;
+        (bool success, ) = winner.call{value: address(this).balance}("");
+        if (!success) revert Raffle_TransferFailed();
+    }
 
     // Getter Function
     function getEntranceFee() external view returns (uint256) {
