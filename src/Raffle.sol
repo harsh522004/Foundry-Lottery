@@ -4,11 +4,17 @@ pragma solidity ^0.8.18;
 // IMPORTS
 import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
+import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 
 // Custom error
 error Raffle_NotEnoughEthSent();
 error Raffle_TransferFailed();
 error Raffle_NotOpen();
+error Raffle_UpKeepNotNeeded(
+    uint256 currentBalance,
+    uint256 numPlayers,
+    uint256 raffleState
+);
 
 /**
  * @title A sample Raffle Contract
@@ -16,7 +22,7 @@ error Raffle_NotOpen();
  * @notice This contract is for creating a sample raffle
  * @dev It implements Chainlink VRFv2.5 and Chainlink Automation
  */
-contract Raffle is VRFConsumerBaseV2Plus {
+contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     // Type Declarations
     enum RaffleState {
         OPEN, // 0
@@ -67,8 +73,15 @@ contract Raffle is VRFConsumerBaseV2Plus {
         emit EnteredRaffle(msg.sender);
     }
 
-    function pickWinner() public {
-        if (block.timestamp - s_lastTimeStamp < i_interval) revert();
+    function performUpkeep(bytes calldata /* performData */) external override {
+        (bool upkeepNeeded, ) = checkUpkeep("");
+        if (!upkeepNeeded) {
+            revert Raffle_UpKeepNotNeeded(
+                address(this).balance,
+                s_players.length,
+                uint256(s_raffleState)
+            );
+        }
         s_raffleState = RaffleState.CALCULATING;
         uint256 requestId = s_vrfCoordinator.requestRandomWords(
             VRFV2PlusClient.RandomWordsRequest({
@@ -99,6 +112,22 @@ contract Raffle is VRFConsumerBaseV2Plus {
         s_players = new address payable[](0);
         s_lastTimeStamp = block.timestamp;
         emit PickedWinner(winner);
+    }
+
+    // checkData in comment means, we are not using it, but it is required by the Chainlink Automation interface, so we need to include it in the function signature
+    function checkUpkeep(
+        bytes memory /* checkData */
+    )
+        public
+        view
+        override
+        returns (bool upkeepNeeded, bytes memory /* performData */)
+    {
+        bool isOpen = (s_raffleState == RaffleState.OPEN);
+        bool timePassed = ((block.timestamp - s_lastTimeStamp) > i_interval);
+        bool hasPlayers = (s_players.length > 0);
+        bool hasBalance = (address(this).balance > 0);
+        return (isOpen && timePassed && hasPlayers && hasBalance, "");
     }
 
     // Getter Function
