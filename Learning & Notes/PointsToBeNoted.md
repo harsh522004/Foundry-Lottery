@@ -15,3 +15,7 @@ The Checks-Effects-Interactions pattern is a crucial best practice in Solidity d
 -   Checks: Validate inputs and conditions to ensure the function can execute safely. This includes checking permissions, input validity, and contract state prerequisites.
 -   Effects: Modify the state of our contract based on the validated inputs. This phase ensures that all internal state changes occur before any external interactions.
 -   Interactions: Perform external calls to other contracts or accounts. This is the last step to prevent reentrancy attacks, where an external call could potentially call back into the original function before it completes, leading to unexpected behavior. (More about reentrancy attacks on a later date)
+
+### Error In Contract
+
+Using a basic **`revert()`** statement may not provide evidence on why a transaction failed. A better approach is to define custom errors by combining the **contract name** with a **description**, such as **`Raffle__UpkeepNotNeeded()`**. Additionally, including **parameters** can offer more detailed information about the cause of the transaction failure.
