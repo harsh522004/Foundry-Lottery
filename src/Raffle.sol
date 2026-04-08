@@ -6,16 +6,6 @@ import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFCo
 import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 
-// Custom error
-error Raffle_NotEnoughEthSent();
-error Raffle_TransferFailed();
-error Raffle_NotOpen();
-error Raffle_UpKeepNotNeeded(
-    uint256 currentBalance,
-    uint256 numPlayers,
-    uint256 raffleState
-);
-
 /**
  * @title A sample Raffle Contract
  * @author Harsh Butani
@@ -23,6 +13,16 @@ error Raffle_UpKeepNotNeeded(
  * @dev It implements Chainlink VRFv2.5 and Chainlink Automation
  */
 contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
+    // Custom error
+    error Raffle_NotEnoughEthSent();
+    error Raffle_TransferFailed();
+    error Raffle_NotOpen();
+    error Raffle_UpKeepNotNeeded(
+        uint256 currentBalance,
+        uint256 numPlayers,
+        uint256 raffleState
+    );
+
     // Type Declarations
     enum RaffleState {
         OPEN, // 0
@@ -137,5 +137,9 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
 
     function getRaffleState() external view returns (RaffleState) {
         return s_raffleState;
+    }
+
+    function getPlayer(uint256 index) external view returns (address) {
+        return s_players[index];
     }
 }

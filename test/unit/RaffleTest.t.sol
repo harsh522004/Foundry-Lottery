@@ -32,6 +32,8 @@ contract RaffleTest is Test {
         gasLane = activeNetworkConfig.gasLane;
         subscriptionId = activeNetworkConfig.subscriptionId;
         callbackGasLimit = activeNetworkConfig.callbackGasLimit;
+
+        vm.deal(PLAYER, STARTING_USER_BALANCE);
     }
 
     function testRaffleInitializesInOpenState() public view {
@@ -46,6 +48,36 @@ contract RaffleTest is Test {
             uint256(actualState),
             uint256(expectedState),
             "Raffle did not initialize in OPEN state"
+        );
+    }
+
+    // Testing : enterRaffle() with NOT enough ETH
+    function testEnterRaffleWithNotEnoughEth() public {
+        // Arrange
+        uint256 notEnoughEth = entranceFee - 1;
+
+        vm.prank(PLAYER);
+
+        // Act & Assert
+        vm.expectRevert(Raffle.Raffle_NotEnoughEthSent.selector);
+        raffle.enterRaffle{value: notEnoughEth}();
+    }
+
+    // Testing : enterRaffle() - to vefify that the player is added to the players array
+    function testEnterRaffleAddsPlayer() public {
+        // Arrange
+        vm.prank(PLAYER);
+
+        // Act
+        raffle.enterRaffle{value: entranceFee}();
+
+        // Assert
+        address expectedPlayer = PLAYER;
+        address actualPlayer = raffle.getPlayer(0);
+        assertEq(
+            actualPlayer,
+            expectedPlayer,
+            "Player was not added to the players array"
         );
     }
 }
