@@ -22,20 +22,19 @@ contract RaffleTest is Test {
 
     function setUp() external {
         DeployRaffle deployer = new DeployRaffle();
-        (raffle, helperConfig) = deployer.run();
+        (raffle, helperConfig) = deployer.deployContract();
 
-        vm.deal(PLAYER, STARTING_USER_BALANCE);
-        (
-            interval,
-            vrfCoordinator,
-            gasLane,
-            subscriptionId,
-            callbackGasLimit,
-            entranceFee
-        ) = helperConfig.getConfig();
+        HelperConfig.NetworkConfig memory activeNetworkConfig = helperConfig
+            .getConfig();
+        entranceFee = activeNetworkConfig.entranceFee;
+        interval = activeNetworkConfig.interval;
+        vrfCoordinator = activeNetworkConfig.vrfCoordinator;
+        gasLane = activeNetworkConfig.gasLane;
+        subscriptionId = activeNetworkConfig.subscriptionId;
+        callbackGasLimit = activeNetworkConfig.callbackGasLimit;
     }
 
-    function testRaffleInitializesInOpenState() external {
+    function testRaffleInitializesInOpenState() public view {
         // Arrange
         Raffle.RaffleState expectedState = Raffle.RaffleState.OPEN;
 

@@ -33,9 +33,13 @@ contract HelperConfig is Script, CodeConstants {
         activeNetworkConfig = networkConfig[block.chainid];
     }
 
+    function getConfig() public returns (NetworkConfig memory) {
+        return getConfigByChainId(block.chainid);
+    }
+
     function getConfigByChainId(
         uint256 chainId
-    ) public view returns (NetworkConfig memory) {
+    ) public returns (NetworkConfig memory) {
         if (networkConfig[chainId].vrfCoordinator != address(0)) {
             return networkConfig[chainId];
         } else if (chainId == LOCALHOST_CHAINID) {
@@ -80,5 +84,4 @@ contract HelperConfig is Script, CodeConstants {
                 callbackGasLimit: 500000
             });
     }
-
 }
