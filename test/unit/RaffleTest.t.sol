@@ -7,6 +7,9 @@ import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 
 contract RaffleTest is Test {
+    event EnteredRaffle(address indexed player);
+    event PickedWinner(address indexed winner);
+
     Raffle public raffle;
     HelperConfig public helperConfig;
 
@@ -79,5 +82,16 @@ contract RaffleTest is Test {
             expectedPlayer,
             "Player was not added to the players array"
         );
+    }
+
+    // Testing : enterRaffle() - to verify that the EnteredRaffle event is emitted with the correct player address
+    function testEnterRaffleEmitsEvent() public {
+        // Arrange
+        vm.prank(PLAYER);
+
+        // Act & Assert
+        vm.expectEmit(true, false, false, false, address(raffle));
+        emit EnteredRaffle(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
     }
 }
