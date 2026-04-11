@@ -157,3 +157,172 @@ event BetterEvent(address indexed user, uint256 indexed amount);
 Now both can be checked separately.
 
 * * * * *
+Foundry Cheatcodes --- `vm.roll` and `vm.warp`
+--------------------------------------------
+
+### `vm.roll`
+
+#### What it does
+
+`vm.roll(blockNumber)` sets the **block number** (`block.number`) in your test.
+
+* * * * *
+
+#### Syntax
+
+```
+vm.roll(uint256 newBlockNumber);
+
+```
+
+* * * * *
+
+#### Example
+
+```
+function testBlockNumberChange() public {
+    vm.roll(100);
+
+    assertEq(block.number, 100);
+}
+
+```
+
+* * * * *
+
+#### When to use
+
+Use `vm.roll` when your contract logic depends on:
+
+-   `block.number`
+
+-   things like block-based delays
+
+-   voting periods
+
+-   block-based conditions
+
+* * * * *
+
+#### Example use case
+
+```
+function isFinished() public view returns (bool) {
+    return block.number > endBlock;
+}
+
+```
+
+Test:
+
+```
+vm.roll(endBlock + 1);
+assertTrue(contract.isFinished());
+
+```
+
+* * * * *
+
+* * * * *
+
+### `vm.warp`
+
+#### What it does
+
+`vm.warp(timestamp)` sets the **block timestamp** (`block.timestamp`) in your test.
+
+* * * * *
+
+#### Syntax
+
+```
+vm.warp(uint256 newTimestamp);
+
+```
+
+* * * * *
+
+#### Example
+
+```
+function testTimeChange() public {
+    vm.warp(1 days);
+
+    assertEq(block.timestamp, 1 days);
+}
+
+```
+
+* * * * *
+
+#### When to use
+
+Use `vm.warp` when your contract logic depends on:
+
+-   time (`block.timestamp`)
+
+-   time locks
+
+-   deadlines
+
+-   auctions
+
+-   raffles / randomness timing
+
+* * * * *
+
+#### Example use case
+
+```
+function canWithdraw() public view returns (bool) {
+    return block.timestamp >= unlockTime;
+}
+
+```
+
+Test:
+
+```
+vm.warp(unlockTime);
+assertTrue(contract.canWithdraw());
+
+```
+
+* * * * *
+
+* * * * *
+
+### Key Difference
+
+| Cheatcode | Changes | Used for |
+| --- | --- | --- |
+| `vm.roll` | `block.number` | block-based logic |
+| `vm.warp` | `block.timestamp` | time-based logic |
+
+* * * * *
+
+* * * * *
+
+### Important Notes
+
+1.  These only affect the test environment
+
+    -   They do not exist on real blockchain
+
+2.  They apply immediately
+
+    -   No mining required
+
+3.  You can use them multiple times in one test
+
+* * * * *
+
+* * * * *
+
+### Quick Mental Model
+
+-   `vm.roll` → "move blocks forward"
+
+-   `vm.warp` → "move time forward"
+
+* * * * *

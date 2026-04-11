@@ -94,4 +94,19 @@ contract RaffleTest is Test {
         emit EnteredRaffle(PLAYER);
         raffle.enterRaffle{value: entranceFee}();
     }
+
+    // Testing : enterRaffle() - to verify that the function reverts if the raffle is not open
+    function testEnterRaffleWhenNotOpen() public {
+        // Arrange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1); // Manipulate block timestamp
+        vm.roll(block.number + 1); // add a new block to update the timestamp
+        raffle.performUpkeep("");
+
+        // Act and Assert
+        vm.expectRevert(Raffle.Raffle_NotOpen.selector);
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+    }
 }
