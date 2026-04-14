@@ -51,7 +51,11 @@ contract HelperConfig is Script, CodeConstants {
         }
     }
 
-    function getSepoliaEthConfig() public pure returns (NetworkConfig memory) {
+    function getSepoliaEthConfig()
+        internal
+        pure
+        returns (NetworkConfig memory)
+    {
         NetworkConfig memory sepoliaConfig = NetworkConfig({
             entranceFee: 0.01 ether,
             interval: 30,
@@ -64,7 +68,10 @@ contract HelperConfig is Script, CodeConstants {
         return sepoliaConfig;
     }
 
-    function getOrCreateAnvilEthConfig() public returns (NetworkConfig memory) {
+    function getOrCreateAnvilEthConfig()
+        internal
+        returns (NetworkConfig memory)
+    {
         if (activeNetworkConfig.vrfCoordinator != address(0)) {
             return activeNetworkConfig;
         }

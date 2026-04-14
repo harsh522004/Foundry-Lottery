@@ -5,6 +5,7 @@ import {Script, console} from "forge-std/Script.sol";
 import {HelperConfig, CodeConstants} from "./HelperConfig.s.sol";
 import {VRFCoordinatorV2_5Mock} from "chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 import {LinkToken} from "test/mocks/LinkToken.sol";
+import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
 
 contract SubscriptionCreator is Script {
     function createSubscriptionUsingConfig() public returns (uint256, address) {
@@ -25,15 +26,6 @@ contract SubscriptionCreator is Script {
 
 contract FundSubscription is Script, CodeConstants {
     uint256 public constant FUND_AMOUNT = 3 ether;
-
-    function fundSubscriptionUsingConfig() public {
-        HelperConfig helperConfig = new HelperConfig();
-        address vrfCoordinator = helperConfig.getConfig().vrfCoordinator;
-        uint256 subscriptionId = helperConfig.getConfig().subscriptionId;
-        address linkTokenAddress = helperConfig.getConfig().linkToken;
-
-        fundSubscription(vrfCoordinator, subscriptionId, linkTokenAddress);
-    }
 
     function fundSubscription(
         address vrfCoordinator,
@@ -58,5 +50,38 @@ contract FundSubscription is Script, CodeConstants {
             vm.stopBroadcast();
             console.log("Subscription funded with amount:", FUND_AMOUNT);
         }
+    }
+}
+
+contract AddConsumer is Script {
+    function addConsumerUsingConfig(address consumerAddress) public {
+        HelperConfig helperConfig = new HelperConfig();
+        HelperConfig.NetworkConfig memory activeNetworkConfig = helperConfig
+            .getConfig();
+        addConsumer(
+            activeNetworkConfig.vrfCoordinator,
+            activeNetworkConfig.subscriptionId,
+            consumerAddress
+        );
+    }
+
+    function addConsumer(
+        address vrfCoordinator,
+        uint256 subscriptionId,
+        address consumerAddress
+    ) public {
+        vm.startBroadcast();
+        VRFCoordinatorV2_5Mock(vrfCoordinator).addConsumer(
+            subscriptionId,
+            consumerAddress
+        );
+        vm.stopBroadcast();
+        console.log("Consumer added to subscription:", consumerAddress);
+    }
+
+    function run() external {
+        address mostRecentlyDeployedConsumer = DevOpsTools
+            .get_most_recent_deployment("Raffle", block.chainid);
+        addConsumerUsingConfig(mostRecentlyDeployedConsumer);
     }
 }
