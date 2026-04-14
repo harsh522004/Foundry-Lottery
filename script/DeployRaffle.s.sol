@@ -20,7 +20,9 @@ contract DeployRaffle is Script {
             (
                 uint256 newSubscriptionId,
                 address vrfCoordinator
-            ) = subscriptionCreator.createSubscriptionUsingConfig();
+            ) = subscriptionCreator.createSubscription(
+                    activeNetworkConfig.vrfCoordinator
+                );
             activeNetworkConfig.subscriptionId = newSubscriptionId;
             activeNetworkConfig.vrfCoordinator = vrfCoordinator;
 

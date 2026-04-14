@@ -8,9 +8,9 @@ import {LinkToken} from "test/mocks/LinkToken.sol";
 import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
 
 contract SubscriptionCreator is Script {
-    function createSubscriptionUsingConfig() public returns (uint256, address) {
-        HelperConfig helperConfig = new HelperConfig();
-        address vrfCoordinator = helperConfig.getConfig().vrfCoordinator;
+    function createSubscription(
+        address vrfCoordinator
+    ) public returns (uint256, address) {
         vm.startBroadcast();
         uint256 subscriptionId = VRFCoordinatorV2_5Mock(vrfCoordinator)
             .createSubscription();

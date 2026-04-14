@@ -54,6 +54,10 @@ contract RaffleTest is Test {
         );
     }
 
+    /*//////////////////////////////////////////////////////////////
+                        enterRaffle() Tests
+    //////////////////////////////////////////////////////////////*/
+
     // Testing : enterRaffle() with NOT enough ETH
     function testEnterRaffleWithNotEnoughEth() public {
         // Arrange
@@ -108,5 +112,62 @@ contract RaffleTest is Test {
         vm.expectRevert(Raffle.Raffle_NotOpen.selector);
         vm.prank(PLAYER);
         raffle.enterRaffle{value: entranceFee}();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        checkUpkeep() Tests
+    //////////////////////////////////////////////////////////////*/
+
+    // Testing : checkUpkeep() - to verify that it returns false if there are no players
+    function testCheckUpkeepReturnsFalseIfNoPlayers() public {
+        // Arrange
+        vm.warp(block.timestamp + interval + 1); // Manipulate block timestamp
+        vm.roll(block.number + 1); // add a new block to update the timestamp
+
+        // Act
+        (bool upkeepNeeded, ) = raffle.checkUpkeep("");
+
+        // Assert
+        assertFalse(
+            upkeepNeeded,
+            "checkUpkeep should return false if there are no players"
+        );
+    }
+
+    // Testing : checkUpkeep() - to verify that it returns false if the raffle is not open
+    function testCheckUpkeepReturnsFalseIfRaffleNotOpen() public {
+        // Arrange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        raffle.performUpkeep(""); // This will change the raffle state to CALCULATING
+
+        // Act
+        (bool upkeepNeeded, ) = raffle.checkUpkeep("");
+
+        // Assert
+        assertFalse(
+            upkeepNeeded,
+            "checkUpkeep should return false if the raffle is not open"
+        );
+    }
+
+    // Testing : checkUpkeep() - to verify that it returns true if the time interval has passed, there are players, and the raffle is open
+    function testCheckUpkeepReturnsTrue() public {
+        // Arrange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+
+        // Act
+        (bool upkeepNeeded, ) = raffle.checkUpkeep("");
+
+        // Assert
+        assertTrue(
+            upkeepNeeded,
+            "checkUpkeep should return true if the time interval has passed, there are players, and the raffle is open"
+        );
     }
 }
