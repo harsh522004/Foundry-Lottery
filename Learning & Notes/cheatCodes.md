@@ -1,328 +1,261 @@
-Foundry `expectEmit` --- Simple Notes
------------------------------------
+### Events Testing --- `expectEmit`
 
-### What `expectEmit` does
+**Purpose**\
+`vm.expectEmit(...)` is used to verify that a specific event is emitted in the next function call.
 
-`vm.expectEmit(...)` tells Foundry:
+**Pattern**
 
-"I expect the next function call to emit a specific event."
-
-You then define that expected event using `emit` in the test.
-
-* * * * *
-
-### Basic Pattern
-
-```
-vm.expectEmit(...);
-emit MyEvent(...);
+vm.expectEmit(...);\
+emit MyEvent(...);\
 contract.someFunction();
 
-```
-
 -   `expectEmit` → sets expectation
+-   `emit` → defines expected event
+-   function call → must emit that event
 
--   `emit` → defines what event should look like
+**Example**
 
--   function call → should emit that event
-
-* * * * *
-
-### Example
-
-Event in contract:
-
-```
 event EnteredRaffle(address indexed player);
 
-```
-
-Test:
-
-```
-vm.expectEmit(true, false, false, false, address(raffle));
+vm.expectEmit(true, false, false, false, address(raffle));\
 emit EnteredRaffle(PLAYER);
 
 raffle.enterRaffle{value: entranceFee}();
 
-```
+**Parameters**
 
-* * * * *
-
-### Meaning of Parameters
-
-```
 vm.expectEmit(checkTopic1, checkTopic2, checkTopic3, checkData, emitter);
 
-```
+-   `checkTopic1/2/3` → indexed params
+-   `checkData` → non-indexed params
+-   `emitter` → contract address
 
--   `checkTopic1` → check first indexed parameter
+**Mapping**
 
--   `checkTopic2` → check second indexed parameter
-
--   `checkTopic3` → check third indexed parameter
-
--   `checkData` → check all non-indexed parameters
-
--   `emitter` → contract address that should emit event
-
-* * * * *
-
-### How it maps to event
-
-```
 event EnteredRaffle(address indexed player);
 
-```
+-   `player` → Topic1
 
--   `player` → indexed → Topic 1
-
--   no other params → no data
-
-So:
-
-```
 vm.expectEmit(true, false, false, false);
 
-```
+-   checks only `player`
 
-means:
+**Rules**
 
--   check `player` value
+-   Max 3 indexed parameters
+-   Non-indexed params go into `data`
+-   `checkData = true` → checks all non-indexed params
+-   Cannot partially check non-indexed params
 
--   ignore everything else
+**Example with Data**
 
-* * * * *
-
-### Important Rules
-
-1.  Max 3 indexed parameters
-
-    -   Solidity does not allow more than 3
-
-2.  Non-indexed parameters go into "data"
-
-    -   Can be many
-
-3.  `checkData` behavior
-
-    -   `true` → checks all non-indexed params
-
-    -   `false` → ignores all of them
-
-    -   cannot check them individually
-
-* * * * *
-
-### Example with data
-
-```
 event Example(address indexed user, uint256 amount, uint256 fee);
 
-```
-
-Test:
-
-```
-vm.expectEmit(true, false, false, true);
+vm.expectEmit(true, false, false, true);\
 emit Example(USER, 100, 5);
 
-```
+**Key Idea**\
+You decide what must match and what can be ignored.
 
--   checks `user` (indexed)
+**Tip**\
+If a value needs individual testing, make it indexed:
 
--   checks both `amount` and `fee` together
-
-* * * * *
-
-### Key Idea
-
-`expectEmit` lets you control:
-
--   which parts of the event must match
-
--   and which parts can be ignored
-
-* * * * *
-
-### Tip
-
-If you want to test a value individually, make it `indexed`.
-
-```
 event BetterEvent(address indexed user, uint256 indexed amount);
 
-```
-
-Now both can be checked separately.
-
-* * * * *
-Foundry Cheatcodes --- `vm.roll` and `vm.warp`
---------------------------------------------
-
-### `vm.roll`
-
-#### What it does
-
-`vm.roll(blockNumber)` sets the **block number** (`block.number`) in your test.
-
 * * * * *
 
-#### Syntax
+### Block & Time Control
 
-```
+#### `vm.roll`
+
+Sets `block.number`.
+
 vm.roll(uint256 newBlockNumber);
 
-```
+**Example**
 
-* * * * *
+vm.roll(100);\
+assertEq(block.number, 100);
 
-#### Example
-
-```
-function testBlockNumberChange() public {
-    vm.roll(100);
-
-    assertEq(block.number, 100);
-}
-
-```
-
-* * * * *
-
-#### When to use
-
-Use `vm.roll` when your contract logic depends on:
-
--   `block.number`
-
--   things like block-based delays
-
--   voting periods
+**Use cases**
 
 -   block-based conditions
+-   voting periods
+-   delays
 
 * * * * *
 
-#### Example use case
+#### `vm.warp`
 
-```
-function isFinished() public view returns (bool) {
-    return block.number > endBlock;
-}
+Sets `block.timestamp`.
 
-```
-
-Test:
-
-```
-vm.roll(endBlock + 1);
-assertTrue(contract.isFinished());
-
-```
-
-* * * * *
-
-* * * * *
-
-### `vm.warp`
-
-#### What it does
-
-`vm.warp(timestamp)` sets the **block timestamp** (`block.timestamp`) in your test.
-
-* * * * *
-
-#### Syntax
-
-```
 vm.warp(uint256 newTimestamp);
 
-```
+**Example**
 
-* * * * *
+vm.warp(1 days);\
+assertEq(block.timestamp, 1 days);
 
-#### Example
-
-```
-function testTimeChange() public {
-    vm.warp(1 days);
-
-    assertEq(block.timestamp, 1 days);
-}
-
-```
-
-* * * * *
-
-#### When to use
-
-Use `vm.warp` when your contract logic depends on:
-
--   time (`block.timestamp`)
+**Use cases**
 
 -   time locks
-
 -   deadlines
-
 -   auctions
-
--   raffles / randomness timing
-
-* * * * *
-
-#### Example use case
-
-```
-function canWithdraw() public view returns (bool) {
-    return block.timestamp >= unlockTime;
-}
-
-```
-
-Test:
-
-```
-vm.warp(unlockTime);
-assertTrue(contract.canWithdraw());
-
-```
+-   raffles
 
 * * * * *
 
-* * * * *
+#### Difference
 
-### Key Difference
-
-| Cheatcode | Changes | Used for |
+| Cheatcode | Affects | Use case |
 | --- | --- | --- |
-| `vm.roll` | `block.number` | block-based logic |
-| `vm.warp` | `block.timestamp` | time-based logic |
+| `vm.roll` | block.number | block-based logic |
+| `vm.warp` | block.timestamp | time-based logic |
+
+**Mental Model**
+
+-   `roll` → move blocks
+-   `warp` → move time
+
+**Notes**
+
+-   Only affects test environment
+-   Applies immediately
+-   Can be reused multiple times
 
 * * * * *
 
-* * * * *
+### Assertions --- `assertEq`
 
-### Important Notes
+**Purpose**\
+Checks if two values are equal.
 
-1.  These only affect the test environment
+assertEq(actual, expected);
 
-    -   They do not exist on real blockchain
+**Examples**
 
-2.  They apply immediately
+assertEq(add(2, 3), 5);\
+assertEq(myContract.value(), 10);\
+assertEq(address(user).balance, 1 ether);
 
-    -   No mining required
+**With message**
 
-3.  You can use them multiple times in one test
+assertEq(result, 5, "Result should be 5");
 
-* * * * *
-
-* * * * *
-
-### Quick Mental Model
-
--   `vm.roll` → "move blocks forward"
-
--   `vm.warp` → "move time forward"
+**Key Idea**\
+Use for strict and clear equality checks.
 
 * * * * *
+
+### Cheatcodes & Utilities
+
+#### `hoax`
+
+Combination of `prank + deal`
+
+hoax(address(i), SEND_VALUE);
+
+* * * * *
+
+#### Creating Test Addresses
+
+address user = makeAddr("alice");           // readable\
+address funder = address(uint160(1234));   // raw
+
+* * * * *
+
+#### `expectRevert`
+
+Used to assert that a function call fails.
+
+vm.expectRevert();\
+contract.someFunction();
+
+-   Reverts → test passes
+-   Does not revert → test fails
+
+* * * * *
+
+### Debugging Commands
+
+forge test -vv      # logs\
+forge test -vvv     # traces\
+forge test -vvvv    # full traces
+
+* * * * *
+
+### EVM & Gas Understanding
+
+**Useful Tools**
+
+-   EVM opcodes → <http://evm.codes/>
+-   Bytecode → opcode → <https://etherscan.io/opcode-tool>
+-   Function selector lookup → <https://4byte.sourcify.dev/>
+
+**Get deployed bytecode**
+
+cast code <contract_address>
+
+* * * * *
+
+#### Memory vs Storage
+
+-   **Memory**
+    -   Temporary
+    -   Cleared after execution
+    -   Like RAM
+-   **Storage**
+    -   Persistent
+    -   Stored on-chain
+    -   Expensive
+    -   Like Hard Drive
+
+**Insight**\
+Accessing storage costs more gas than memory.
+
+* * * * *
+
+#### Gas Optimization Notes
+
+-   Prefer memory over storage when possible
+-   Use naming like:
+    -   `s_` → storage
+    -   `i_` → immutable
+
+Reference:\
+<https://updraft.cyfrin.io/courses/foundry/foundry-fund-me/optimise-solidity-function-gas-costs>
+
+* * * * *
+
+### Solidity Best Practices
+
+-   Write strong NatSpec comments
+-   Prefix custom errors with contract name
+
+    error Raffle_NotEnoughEthSent();
+
+-   Prefer `external` over `public` for gas efficiency
+-   Use `revert` / custom errors instead of `require`
+-   Use `indexed` for searchable event logs
+-   `payable` arrays allow direct transfers
+
+* * * * *
+
+### Chainlink
+
+-   VRF (randomness):\
+    <https://docs.chain.link/vrf/v2/subscription/examples/get-a-random-number>
+-   Security considerations:\
+    <https://docs.chain.link/vrf/v2-5/security>
+-   Automation:\
+    <https://docs.chain.link/chainlink-automation/guides/compatible-contracts>\
+    <https://docs.chain.link/chainlink-automation/guides/job-scheduler>
+
+* * * * *
+
+### Libraries & UI
+
+-   Headers library:\
+    <https://github.com/transmissions11/headers>
+-   Svelte UI:\
+    <https://svelte.dev/tutorial/svelte/welcome-to-svelte>

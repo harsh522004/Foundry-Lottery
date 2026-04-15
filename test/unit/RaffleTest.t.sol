@@ -170,4 +170,40 @@ contract RaffleTest is Test {
             "checkUpkeep should return true if the time interval has passed, there are players, and the raffle is open"
         );
     }
+
+    /*//////////////////////////////////////////////////////////////
+                         performUpKeep()
+    //////////////////////////////////////////////////////////////*/
+
+    // Testing : only run if checkUpKeep Return true
+    function testPerformUpKeepOnlyRunWhenCheckUpKeepIsTrue() public {
+        // Arrange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+
+        // Act & Assert
+        raffle.performUpkeep("");
+    }
+
+    // Testing : not run when checkUpKeep return false
+    function testPerformUpKeepOnlyRunWhenCheckUpKeepIsFalse() public {
+        // Arrange
+        uint256 currentBalance = 0;
+        uint256 numPlayers = 0;
+        Raffle.RaffleState raffleState = raffle.getRaffleState();
+        // No need to arrange to test properly
+
+        // Act & Assert
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Raffle.Raffle_UpKeepNotNeeded.selector,
+                currentBalance,
+                numPlayers,
+                raffleState
+            )
+        );
+        raffle.performUpkeep("");
+    }
 }
