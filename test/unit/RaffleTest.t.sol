@@ -5,11 +5,9 @@ import {Test, console} from "forge-std/Test.sol";
 import {Raffle} from "../../src/Raffle.sol";
 import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
+import {Vm} from "forge-std/Vm.sol";
 
 contract RaffleTest is Test {
-    event EnteredRaffle(address indexed player);
-    event PickedWinner(address indexed winner);
-
     Raffle public raffle;
     HelperConfig public helperConfig;
 
@@ -22,6 +20,19 @@ contract RaffleTest is Test {
     bytes32 public gasLane;
     uint256 public subscriptionId;
     uint32 public callbackGasLimit;
+
+    // Events
+    event EnteredRaffle(address indexed player);
+    event PickedWinner(address indexed winner);
+
+    // Modifiers
+    modifier raffleEntredAndTimePassed() {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1); // Manipulate block timestamp
+        vm.roll(block.number + 1); // add a new block to update the timestamp
+        _;
+    }
 
     function setUp() external {
         DeployRaffle deployer = new DeployRaffle();
@@ -100,12 +111,8 @@ contract RaffleTest is Test {
     }
 
     // Testing : enterRaffle() - to verify that the function reverts if the raffle is not open
-    function testEnterRaffleWhenNotOpen() public {
+    function testEnterRaffleWhenNotOpen() public raffleEntredAndTimePassed {
         // Arrange
-        vm.prank(PLAYER);
-        raffle.enterRaffle{value: entranceFee}();
-        vm.warp(block.timestamp + interval + 1); // Manipulate block timestamp
-        vm.roll(block.number + 1); // add a new block to update the timestamp
         raffle.performUpkeep("");
 
         // Act and Assert
@@ -135,12 +142,11 @@ contract RaffleTest is Test {
     }
 
     // Testing : checkUpkeep() - to verify that it returns false if the raffle is not open
-    function testCheckUpkeepReturnsFalseIfRaffleNotOpen() public {
+    function testCheckUpkeepReturnsFalseIfRaffleNotOpen()
+        public
+        raffleEntredAndTimePassed
+    {
         // Arrange
-        vm.prank(PLAYER);
-        raffle.enterRaffle{value: entranceFee}();
-        vm.warp(block.timestamp + interval + 1);
-        vm.roll(block.number + 1);
         raffle.performUpkeep(""); // This will change the raffle state to CALCULATING
 
         // Act
@@ -154,12 +160,8 @@ contract RaffleTest is Test {
     }
 
     // Testing : checkUpkeep() - to verify that it returns true if the time interval has passed, there are players, and the raffle is open
-    function testCheckUpkeepReturnsTrue() public {
+    function testCheckUpkeepReturnsTrue() public raffleEntredAndTimePassed {
         // Arrange
-        vm.prank(PLAYER);
-        raffle.enterRaffle{value: entranceFee}();
-        vm.warp(block.timestamp + interval + 1);
-        vm.roll(block.number + 1);
 
         // Act
         (bool upkeepNeeded, ) = raffle.checkUpkeep("");
@@ -176,12 +178,11 @@ contract RaffleTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     // Testing : only run if checkUpKeep Return true
-    function testPerformUpKeepOnlyRunWhenCheckUpKeepIsTrue() public {
+    function testPerformUpKeepOnlyRunWhenCheckUpKeepIsTrue()
+        public
+        raffleEntredAndTimePassed
+    {
         // Arrange
-        vm.prank(PLAYER);
-        raffle.enterRaffle{value: entranceFee}();
-        vm.warp(block.timestamp + interval + 1);
-        vm.roll(block.number + 1);
 
         // Act & Assert
         raffle.performUpkeep("");
@@ -205,5 +206,22 @@ contract RaffleTest is Test {
             )
         );
         raffle.performUpkeep("");
+    }
+
+    // Testing : check event trigger on PerformUpkeep
+    function testPerformUpkeepUpdatesRaffleStateAndEmitsRequestId()
+        public
+        raffleEntredAndTimePassed
+    {
+        // Act
+        vm.recordLogs();
+        raffle.performUpkeep("");
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        bytes32 requestId = entries[1].topics[1];
+
+        // Assert
+        Raffle.RaffleState raffleState = raffle.getRaffleState();
+        assert(uint256(requestId) > 0);
+        assert(uint(raffleState) == 1);
     }
 }

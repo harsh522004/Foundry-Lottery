@@ -47,6 +47,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     // Events
     event EnteredRaffle(address indexed player);
     event PickedWinner(address indexed winner);
+    event RequestedRaffleWinner(uint256 indexed requestId);
 
     constructor(
         address vrfCoordinator,
@@ -97,6 +98,8 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
                 )
             })
         );
+
+        emit RequestedRaffleWinner(requestId);
     }
 
     function fulfillRandomWords(
