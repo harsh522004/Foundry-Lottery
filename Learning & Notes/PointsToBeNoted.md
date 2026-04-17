@@ -19,3 +19,9 @@ The Checks-Effects-Interactions pattern is a crucial best practice in Solidity d
 ### Error In Contract
 
 Using a basic **`revert()`** statement may not provide evidence on why a transaction failed. A better approach is to define custom errors by combining the **contract name** with a **description**, such as **`Raffle__UpkeepNotNeeded()`**. Additionally, including **parameters** can offer more detailed information about the cause of the transaction failure.
+
+### Fuzz testing
+
+- Generally, fuzz testing, also known as fuzzing, is an automated software testing technique that involves injecting invalid, malformed, or unexpected inputs into a system to identify software defects and vulnerabilities. 
+- This method helps in revealing issues that may lead to crashes, security breaches, or performance problems. Fuzz testing operates by feeding a program with large volumes of random data (referred to as "fuzz") to observe how the system handles such inputs. 
+- If the system crashes or exhibits abnormal behavior, it indicates a potential vulnerability or defect that needs to be addressed.
