@@ -34,12 +34,11 @@ contract FundSubscription is Script, CodeConstants {
     ) public {
         if (block.chainid == LOCALHOST_CHAINID) {
             vm.startBroadcast();
-            VRFCoordinatorV2_5Mock(vrfCoordinator).fundSubscription(
-                subscriptionId,
-                FUND_AMOUNT
-            );
+            vm.deal(msg.sender, FUND_AMOUNT);
+            VRFCoordinatorV2_5Mock(vrfCoordinator).fundSubscriptionWithNative{
+                value: FUND_AMOUNT
+            }(subscriptionId);
             vm.stopBroadcast();
-            console.log("Subscription funded with amount:", FUND_AMOUNT);
         } else {
             vm.startBroadcast();
             LinkToken(linkTokenAddress).transferAndCall(
@@ -48,23 +47,11 @@ contract FundSubscription is Script, CodeConstants {
                 abi.encode(subscriptionId)
             );
             vm.stopBroadcast();
-            console.log("Subscription funded with amount:", FUND_AMOUNT);
         }
     }
 }
 
 contract AddConsumer is Script {
-    function addConsumerUsingConfig(address consumerAddress) public {
-        HelperConfig helperConfig = new HelperConfig();
-        HelperConfig.NetworkConfig memory activeNetworkConfig = helperConfig
-            .getConfig();
-        addConsumer(
-            activeNetworkConfig.vrfCoordinator,
-            activeNetworkConfig.subscriptionId,
-            consumerAddress
-        );
-    }
-
     function addConsumer(
         address vrfCoordinator,
         uint256 subscriptionId,
@@ -77,11 +64,5 @@ contract AddConsumer is Script {
         );
         vm.stopBroadcast();
         console.log("Consumer added to subscription:", consumerAddress);
-    }
-
-    function run() external {
-        address mostRecentlyDeployedConsumer = DevOpsTools
-            .get_most_recent_deployment("Raffle", block.chainid);
-        addConsumerUsingConfig(mostRecentlyDeployedConsumer);
     }
 }

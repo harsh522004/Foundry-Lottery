@@ -230,16 +230,72 @@ contract RaffleTest is Test {
                         Fuzz() Tests
     //////////////////////////////////////////////////////////////*/
 
-    function testFulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep()
-        public
-        raffleEntredAndTimePassed
-    {
-        // Arrange
+    function testFulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep(
+        uint256 randomRequestId
+    ) public raffleEntredAndTimePassed {
         // Act / Assert
         vm.expectRevert(VRFCoordinatorV2_5Mock.InvalidRequest.selector);
         VRFCoordinatorV2_5Mock(vrfCoordinator).fulfillRandomWords(
             randomRequestId,
             address(raffle)
+        );
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        fulfillRandomWords() Tests
+    //////////////////////////////////////////////////////////////*/
+    function testFulfillRandomWordsPicksWinnerResetsRaffleAndTransfersPrize()
+        public
+        raffleEntredAndTimePassed
+    {
+        // Arrange
+        uint256 additionalPlayers = 3;
+        uint256 startingIndex = 1; // We already have one player (PLAYER) from the modifier
+        address expectedWinner = address(1);
+        for (
+            uint256 i = startingIndex;
+            i < additionalPlayers + startingIndex;
+            i++
+        ) {
+            address newPlayer = address(uint160(i));
+            hoax(newPlayer, 1 ether);
+            raffle.enterRaffle{value: entranceFee}();
+        }
+        uint256 startingTimestamp = raffle.getLastTimeStamp();
+        uint256 winnersStartingBalance = expectedWinner.balance;
+
+        // Act
+        vm.recordLogs();
+        raffle.performUpkeep("");
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        bytes32 requestId = entries[1].topics[1];
+        VRFCoordinatorV2_5Mock(vrfCoordinator).fulfillRandomWords(
+            uint256(requestId),
+            address(raffle)
+        );
+
+        // Assert
+        address recentWinner = raffle.getRecentWinner();
+        uint256 endingTimestamp = raffle.getLastTimeStamp();
+        Raffle.RaffleState raffleState = raffle.getRaffleState();
+        uint256 prize = entranceFee * (additionalPlayers + 1);
+        uint256 winnerBalance = recentWinner.balance;
+
+        assertEq(
+            recentWinner,
+            expectedWinner,
+            "The recent winner is not the expected winner"
+        );
+        assertEq(
+            winnerBalance,
+            winnersStartingBalance + prize,
+            "The winner did not receive the correct prize amount"
+        );
+        assert(endingTimestamp > startingTimestamp);
+        assertEq(
+            uint256(raffleState),
+            uint256(Raffle.RaffleState.OPEN),
+            "Raffle state did not reset to OPEN"
         );
     }
 }
