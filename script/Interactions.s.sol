@@ -35,9 +35,10 @@ contract FundSubscription is Script, CodeConstants {
         if (block.chainid == LOCALHOST_CHAINID) {
             vm.startBroadcast();
             vm.deal(msg.sender, FUND_AMOUNT);
-            VRFCoordinatorV2_5Mock(vrfCoordinator).fundSubscriptionWithNative{
-                value: FUND_AMOUNT
-            }(subscriptionId);
+            VRFCoordinatorV2_5Mock(vrfCoordinator).fundSubscription(
+                subscriptionId,
+                FUND_AMOUNT * 100
+            ); // call "fundSubscriptionWithNative" when ENABLE_NATIVE_PAYMENT is true in Raffle contract
             vm.stopBroadcast();
         } else {
             vm.startBroadcast();

@@ -192,7 +192,7 @@ contract RaffleTest is Test {
     // Testing : not run when checkUpKeep return false
     function testPerformUpKeepOnlyRunWhenCheckUpKeepIsFalse() public {
         // Arrange
-        uint256 currentBalance = 0;
+        uint256 currentBalance = address(raffle).balance;
         uint256 numPlayers = 0;
         Raffle.RaffleState raffleState = raffle.getRaffleState();
         // No need to arrange to test properly
@@ -233,6 +233,7 @@ contract RaffleTest is Test {
     function testFulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep(
         uint256 randomRequestId
     ) public raffleEntredAndTimePassed {
+        if (block.chainid != 31337) return; // Skip on non-local chains
         // Act / Assert
         vm.expectRevert(VRFCoordinatorV2_5Mock.InvalidRequest.selector);
         VRFCoordinatorV2_5Mock(vrfCoordinator).fulfillRandomWords(
@@ -269,10 +270,16 @@ contract RaffleTest is Test {
         raffle.performUpkeep("");
         Vm.Log[] memory entries = vm.getRecordedLogs();
         bytes32 requestId = entries[1].topics[1];
-        VRFCoordinatorV2_5Mock(vrfCoordinator).fulfillRandomWords(
-            uint256(requestId),
-            address(raffle)
-        );
+
+        if (block.chainid == 31337) {
+            VRFCoordinatorV2_5Mock(vrfCoordinator).fulfillRandomWords(
+                uint256(requestId),
+                address(raffle)
+            );
+        } else {
+            // On fork, we can't fulfill, so skip the rest
+            return;
+        }
 
         // Assert
         address recentWinner = raffle.getRecentWinner();

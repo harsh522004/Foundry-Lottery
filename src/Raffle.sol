@@ -32,7 +32,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     // State Variables
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint32 private constant NUM_WORDS = 2;
-    bool private constant ENABLE_NATIVE_PAYMENT = true;
+    bool private constant ENABLE_NATIVE_PAYMENT = false;
     RaffleState private s_raffleState;
     uint256 private immutable i_entranceFee;
     uint256 private immutable i_interval;

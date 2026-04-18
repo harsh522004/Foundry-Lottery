@@ -20,6 +20,15 @@ The Checks-Effects-Interactions pattern is a crucial best practice in Solidity d
 
 Using a basic **`revert()`** statement may not provide evidence on why a transaction failed. A better approach is to define custom errors by combining the **contract name** with a **description**, such as **`Raffle__UpkeepNotNeeded()`**. Additionally, including **parameters** can offer more detailed information about the cause of the transaction failure.
 
+### Different Test Types : 
+-  Unit Testing - testing individual functions in isolation
+-  Integration Testing - testing how different functions and components work together
+-  Fork Testing - testing on a fork of the mainnet to simulate real-world conditions
+-  Staging Testing - testing on a testnet that closely resembles the mainnet environment 
+-  stateful Fuzz Testing - testing the contract with a wide range of random inputs and states to identify edge cases and vulnerabilities
+-  stateless Fuzz Testing - testing the contract with random inputs without considering the state of the contract
+-  formal verification - using mathematical methods to prove the correctness of the contract's logic and behavior
+
 ### Fuzz testing
 
 - Generally, fuzz testing, also known as fuzzing, is an automated software testing technique that involves injecting invalid, malformed, or unexpected inputs into a system to identify software defects and vulnerabilities. 
